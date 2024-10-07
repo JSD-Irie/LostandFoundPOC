@@ -1,17 +1,26 @@
+# main.py
 from fastapi import FastAPI, HTTPException
 import uuid
-from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-from models import LostItem, LostItemBySubcategory
+from fastapi.encoders import jsonable_encoder
+from models import (
+    LostItem,
+    LostItemBySubcategory,
+    LostItemRequest,
+    Currency,
+    JapaneseCurrency,
+    Color,
+    Status,
+    Item
+)
 from database import get_lost_item_container, get_lost_item_by_subcategory_container
 from chat_service import ChatService
+import logging
 
-class LostItemRequest(BaseModel):
-    municipality: str
-    subcategory: str
-    description: Optional[str] = None
-    contact: Optional[str] = None
+# ロギングの設定
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -20,12 +29,11 @@ lost_items_container = get_lost_item_container()  # LostItems コンテナ
 lost_items_by_subcategory_container = get_lost_item_by_subcategory_container()  # LostItemBySubcategory コンテナ
 
 @app.get("/lostitems", response_model=List[LostItem])
-# 引数をNoneでもよいようにOptional型にしている
-async def get_lost_items(municipality: Optional[str] = None, subcategory: Optional[str] = None):
+async def get_lost_items(municipality: Optional[str] = None, categoryName: Optional[str] = None):
     """
     Cosmos DB から忘れ物データをクエリし、結果を返す
     - `municipality`: 市区町村でフィルタリング
-    - `subcategory`: 中分類でフィルタリング
+    - `categoryName`: 中分類でフィルタリング
     """
     chat_service = ChatService()
     query = "SELECT * FROM c"
@@ -33,26 +41,36 @@ async def get_lost_items(municipality: Optional[str] = None, subcategory: Option
 
     if municipality:
         municipality = chat_service.select_location(municipality)
-        filters.append(f"c.Municipality = '{municipality}'")
+        filters.append(f"c.createUserPlace = '{municipality}'")
 
-    if subcategory:
-        subcategory = chat_service.select_category(subcategory)
-        filters.append(f"c.Subcategory = '{subcategory}'")
+    if categoryName:
+        categoryName = chat_service.select_category(categoryName)
+        filters.append(f"c.item.categoryName = '{categoryName}'")
 
     if filters:
         query += " WHERE " + " AND ".join(filters)
 
-    # クエリ実行 (LostItems コンテナ)
-    items = list(lost_items_container.query_items(
-        query=query,
-        enable_cross_partition_query=True
-    ))
+    logger.info(f"Executing query: {query}")
+
+    try:
+        items = list(lost_items_container.query_items(
+            query=query,
+            enable_cross_partition_query=True
+        ))
+        logger.info(f"Retrieved {len(items)} items from Cosmos DB")
+    except Exception as e:
+        logger.error(f"Failed to execute query: {e}")
+        raise HTTPException(status_code=500, detail=f"データの取得に失敗しました: {str(e)}")
 
     if not items:
-
         return []
 
-    return items
+    # Pydanticモデルに変換
+    try:
+        return [LostItem(**item) for item in items]
+    except Exception as e:
+        logger.error(f"Failed to convert data to Pydantic models: {e}")
+        raise HTTPException(status_code=500, detail=f"データの変換に失敗しました: {str(e)}")
 
 @app.get("/lostitems/subcategory", response_model=List[LostItemBySubcategory])
 async def get_lost_items_by_subcategory(subcategory: str):
@@ -61,85 +79,92 @@ async def get_lost_items_by_subcategory(subcategory: str):
     """
     chat_service = ChatService()
     subcategory = chat_service.select_category(subcategory)
-    query = f"SELECT * FROM c WHERE c.Subcategory = '{subcategory}'"
-    
-    # クエリ実行 (LostItemBySubcategory コンテナ)
-    items = list(lost_items_by_subcategory_container.query_items(
-        query=query,
-        enable_cross_partition_query=True
-    ))
+    query = f"SELECT * FROM c WHERE c.item.categoryName = '{subcategory}'"
+
+    logger.info(f"Executing query: {query}")
+
+    try:
+        items = list(lost_items_by_subcategory_container.query_items(
+            query=query,
+            enable_cross_partition_query=True
+        ))
+        logger.info(f"Retrieved {len(items)} items for subcategory '{subcategory}'")
+    except Exception as e:
+        logger.error(f"Failed to execute query: {e}")
+        raise HTTPException(status_code=500, detail=f"データの取得に失敗しました: {str(e)}")
 
     if not items:
         raise HTTPException(status_code=404, detail=f"Lost items with subcategory '{subcategory}' not found")
 
-    return items
+    # Pydanticモデルに変換
+    try:
+        return [LostItemBySubcategory(**item) for item in items]
+    except Exception as e:
+        logger.error(f"Failed to convert data to Pydantic models: {e}")
+        raise HTTPException(status_code=500, detail=f"データの変換に失敗しました: {str(e)}")
 
-@app.post("/chat")
-async def chat_service(message: str):
-    """
-    Azure OpenAI の GPT-3 によるチャットサービス
-    """
-    chat_service = ChatService()
-    response = chat_service.select_category(message)
-
-    return {"response": response}
-
-
-@app.post("/lostitems")
+@app.post("/lostitems", response_model=LostItem)
 async def add_lost_item(item: LostItemRequest):
     """
     新しい忘れ物データを Cosmos DB に追加する
-    - `municipality`: 市区町村
-    - `subcategory`: 中分類
-    - `description`: 説明（任意）
-    - `contact`: 連絡先（任意）
     """
     try:
+        logger.info(f"Adding lost item: {item}")
+
         # データ作成
-        current_time = datetime.utcnow().isoformat()  # 現在のUTC時刻を取得
-        lost_item_data = {
-            "id": str(uuid.uuid4()),  # 一意のIDを生成
-            "Municipality": item.municipality,
-            "Subcategory": item.subcategory,
-            "Description": item.description if item.description else "説明なし",
-            "ContactInfo": item.contact if item.contact else "連絡先なし",
-            "DateFound": current_time,  # データが追加された時間
-        }
+        current_time = datetime.utcnow()
+        lost_item_data = item.dict()
+        lost_item_data["id"] = str(uuid.uuid4())  # 一意のIDを生成
+        lost_item_data["DateFound"] = current_time  # データが追加された時間
+
+        # JSONシリアライズ可能な形式に変換
+        lost_item_data_encoded = jsonable_encoder(lost_item_data)
 
         # Cosmos DB にアイテムを追加
-        lost_items_container.create_item(body=lost_item_data)
-        
-        return {"message": "アイテムが正常に追加されました", "data": lost_item_data}
+        lost_items_container.create_item(body=lost_item_data_encoded)
+        logger.info(f"Added lost item with ID: {lost_item_data['id']}")
+
+        # Pydanticモデルに変換
+        created_item = LostItem(**lost_item_data)
+
+        return created_item
 
     except Exception as e:
+        logger.error(f"Failed to add lost item: {e}")
         raise HTTPException(status_code=500, detail=f"アイテムの追加に失敗しました: {str(e)}")
 
-
-@app.put("/lostitems/{item_id}")
+@app.put("/lostitems/{item_id}", response_model=LostItem)
 async def update_lost_item(item_id: str, item: LostItemRequest):
     """
     既存の忘れ物データを更新する
-    - `item_id`: 更新するデータのID
-    - `municipality`: 市区町村
-    - `subcategory`: 中分類
-    - `description`: 説明（任意）
-    - `contact`: 連絡先（任意）
     """
     try:
-        # 既存のアイテムを取得
-        existing_item = lost_items_container.read_item(item=item_id, partition_key=item.municipality)
+        logger.info(f"Updating lost item with ID: {item_id} with data: {item}")
 
-        # 更新データを反映
-        existing_item["Municipality"] = item.municipality
-        existing_item["Subcategory"] = item.subcategory
-        existing_item["Description"] = item.description if item.description else existing_item["Description"]
-        existing_item["ContactInfo"] = item.contact if item.contact else existing_item["ContactInfo"]
-        existing_item["DateUpdated"] = datetime.utcnow().isoformat()  # 更新日時を追加
+        # 既存のアイテムを取得
+        existing_item = lost_items_container.read_item(item=item_id, partition_key=item.createUserPlace)
+        logger.info(f"Retrieved existing item: {existing_item}")
+
+        # 更新データを辞書に変換（未設定のフィールドを除外）
+        update_data = item.dict(exclude_unset=True)
+        update_data["DateUpdated"] = datetime.utcnow()  # 更新日時を追加
+
+        # 更新されたフィールドのみを反映
+        for key, value in update_data.items():
+            existing_item[key] = value
+
+        # JSONシリアライズ可能な形式に変換
+        existing_item_encoded = jsonable_encoder(existing_item)
 
         # Cosmos DB に更新されたアイテムを保存
-        lost_items_container.replace_item(item=existing_item, body=existing_item)
+        lost_items_container.replace_item(item=existing_item, body=existing_item_encoded)
+        logger.info(f"Updated lost item with ID: {item_id}")
 
-        return {"message": "アイテムが正常に更新されました", "data": existing_item}
+        # Pydanticモデルに変換
+        updated_item = LostItem(**existing_item)
+
+        return updated_item
 
     except Exception as e:
+        logger.error(f"Failed to update lost item: {e}")
         raise HTTPException(status_code=500, detail=f"アイテムの更新に失敗しました: {str(e)}")
