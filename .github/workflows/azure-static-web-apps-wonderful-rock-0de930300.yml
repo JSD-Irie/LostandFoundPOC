@@ -29,7 +29,9 @@ jobs:
           app_location: "./front/lost-item-search"
           output_location: "" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
-
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+        
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
