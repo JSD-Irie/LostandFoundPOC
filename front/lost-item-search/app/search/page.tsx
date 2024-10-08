@@ -19,11 +19,11 @@ const Home: React.FC = () => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     let apiUrl;
     if (location && subcategory) {
-      apiUrl = `${apiBaseUrl}/lostitems?municipality=${location}&subcategory=${subcategory}`;
+      apiUrl = `${apiBaseUrl}/lostitems?municipality=${location}&categoryName=${subcategory}`;
     } else if (location) {
       apiUrl = `${apiBaseUrl}/lostitems?municipality=${location}`;
     } else if (subcategory) {
-      apiUrl = `${apiBaseUrl}/lostitems/subcategory?subcategory=${subcategory}`;
+      apiUrl = `${apiBaseUrl}/lostitems?categoryName=${subcategory}`;
     } else {
       apiUrl = `${apiBaseUrl}/lostitems`;
     }

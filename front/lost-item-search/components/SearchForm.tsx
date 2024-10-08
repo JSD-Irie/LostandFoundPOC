@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextField, Button, Grid, Container, Typography, MenuItem } from '@mui/material';
+import { TextField, Button, Grid, Container, Typography } from '@mui/material';
 
 interface SearchFormProps {
   onSearch: (query: { location: string; subcategory: string }) => void;

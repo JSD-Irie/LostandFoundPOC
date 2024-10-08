@@ -8,3 +8,5 @@ uvicorn
 azure-cosmos
 python-dotenv
 openai
+azure-identity
+azure-storage-blob

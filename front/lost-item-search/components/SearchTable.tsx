@@ -3,14 +3,40 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 
 interface SearchResult {
-  Municipality: string;
-  Subcategory: string;
-  DateFound: string;
-  Description: string;
-}
-
-interface SearchTableProps {
-  results: SearchResult[];
+  color: {
+    id: string;
+    name: string;
+    url: string;
+  };
+  createUserID: string;
+  createUserPlace: string;
+  currency: {
+    foreignCurrency: string;
+    japaneseCurrency: Array<{
+      count: number;
+      id: string;
+    }>;
+  };
+  findDateTime: string;
+  findPlace: string;
+  id: string;
+  imageUrl: string[];
+  isValuables: boolean;
+  item: {
+    categoryCode: string;
+    categoryName: string;
+    itemName: string;
+    valuableFlg: number;
+  };
+  keyword: string[];
+  lostItemPartitionKey: string;
+  memo: string;
+  mngmtNo: string;
+  personal: string;
+  status: {
+    id: string;
+    name: string;
+  };
 }
 
 // 日付を見やすい形式にフォーマットする関数
@@ -22,6 +48,10 @@ const formatDate = (dateString: string): string => {
     day: 'numeric',
   }).format(date);
 };
+
+interface SearchTableProps {
+  results: SearchResult[];
+}
 
 export const SearchTable: React.FC<SearchTableProps> = ({ results }) => {
   return (
@@ -38,10 +68,10 @@ export const SearchTable: React.FC<SearchTableProps> = ({ results }) => {
         <TableBody>
           {results.map((row, index) => (
             <TableRow key={index}>
-              <TableCell>{row.Municipality}</TableCell>
-              <TableCell>{row.Subcategory}</TableCell>
-              <TableCell>{row.Description}</TableCell>
-              <TableCell>{formatDate(row.DateFound)}</TableCell>
+              <TableCell>{row.createUserPlace}</TableCell>
+              <TableCell>{row.item.categoryName}</TableCell>
+              <TableCell>{row.memo}</TableCell>
+              <TableCell>{formatDate(row.findDateTime)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

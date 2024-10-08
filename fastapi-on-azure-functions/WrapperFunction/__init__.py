@@ -1,5 +1,5 @@
 # main.py
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException
 import uuid
 from typing import List, Optional
 from datetime import datetime
@@ -17,6 +17,9 @@ from models import (
 from database import get_lost_item_container, get_lost_item_by_subcategory_container
 from chat_service import ChatService
 import logging
+from azure.storage.blob import BlobServiceClient
+from azure.identity import DefaultAzureCredential
+import os
 
 # ロギングの設定
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +30,11 @@ app = FastAPI()
 # Cosmos DB のコンテナ取得
 lost_items_container = get_lost_item_container()  # LostItems コンテナ
 lost_items_by_subcategory_container = get_lost_item_by_subcategory_container()  # LostItemBySubcategory コンテナ
+
+# 環境変数から設定を取得
+BLOB_CONTAINER_NAME = "images"  # コンテナ名
+BLOB_ACCOUNT_URL = os.getenv("AZURE_BLOB_ACCOUNT_URL")  # ストレージアカウントのURL
+
 
 @app.get("/lostitems", response_model=List[LostItem])
 async def get_lost_items(municipality: Optional[str] = None, categoryName: Optional[str] = None):
@@ -168,3 +176,43 @@ async def update_lost_item(item_id: str, item: LostItemRequest):
     except Exception as e:
         logger.error(f"Failed to update lost item: {e}")
         raise HTTPException(status_code=500, detail=f"アイテムの更新に失敗しました: {str(e)}")
+
+@app.post("/imagescan")
+async def upload_image(image: UploadFile = File(...)):
+    """
+    画像をアップロードし、処理を行うエンドポイント
+    :param image: アップロードされた画像ファイル
+    :return: 処理結果
+    """
+    chat_service = ChatService()
+    
+    try:
+        result = chat_service.process_image(image)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"画像の処理に失敗しました: {str(e)}")
+
+@app.post("/upload-image")
+async def upload_image(image: UploadFile = File(...)):
+    """
+    画像をAzure Blob Storageにアップロードするエンドポイント
+    :param image: アップロードされた画像ファイル
+    :return: アップロードした画像のURL
+    """
+    try:
+        # DefaultAzureCredentialを使ったBlobServiceClientの初期化
+        credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url=BLOB_ACCOUNT_URL, credential=credential)
+        # Blobのクライアントを作成
+        blob_client = blob_service_client.get_blob_client(container=BLOB_CONTAINER_NAME, blob=image.filename)
+        
+        # 画像をアップロード
+        blob_client.upload_blob(image.file.read(), overwrite=True)
+        
+        # アップロードした画像のURLを生成
+        image_url = f"{BLOB_ACCOUNT_URL}/{BLOB_CONTAINER_NAME}/{image.filename}"
+        
+        return {"imageUrl": image_url}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"画像のアップロードに失敗しました: {str(e)}")
