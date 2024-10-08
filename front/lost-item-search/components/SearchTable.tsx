@@ -2,7 +2,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 
-interface SearchResult {
+export interface SearchResult {
   color: {
     id: string;
     name: string;
@@ -49,7 +49,7 @@ const formatDate = (dateString: string): string => {
   }).format(date);
 };
 
-interface SearchTableProps {
+export interface SearchTableProps {
   results: SearchResult[];
 }
 

@@ -19,6 +19,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useRouter } from 'next/navigation';
 import Header from '@components/TopPage/Header';
+import Image from 'next/image';
 
 // カラー情報のマッピング
 type ColorKey = keyof typeof colorMapping;
@@ -243,13 +244,13 @@ const DetailRegistration: React.FC = () => {
     <div>
       <Header />
       <h2 className="text-center text-2xl my-4">情報の入力</h2>
-      {imagePreviewUrl && (
-        <img
-          src={imagePreviewUrl}
-          alt="Uploaded Image"
-          className="w-4/5 h-auto mb-4 border border-gray-300 rounded mx-auto" // 中央寄せ
-        />
-      )}
+      <Image
+        src={imagePreviewUrl || ''}
+        alt="Uploaded Image"
+        width={800} // Adjust the width as needed
+        height={600} // Adjust the height as needed
+        className="w-4/5 h-auto mb-4 border border-gray-300 rounded mx-auto" // 中央寄せ
+      />
       <div className="flex flex-col items-center">
         <label htmlFor="file-upload" className="cursor-pointer">
           <Button variant="contained" component="span" color="primary" startIcon={<CloudUploadIcon />}>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@components/TopPage/Header';
+import Image from 'next/image';
 
 const UploadImage: React.FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -51,7 +52,7 @@ const UploadImage: React.FC = () => {
         imageUrl: imagePreviewUrl || '', // 画像プレビューURLを渡す
       }).toString();
 
-      router.push(`/register?${queryString}`); // クエリを文字列として結合して渡す
+      router.push(`/detail-registration?${queryString}`); // クエリを文字列として結合して渡す
     } catch (error) {
       console.error('Error uploading image:', error);
     }
@@ -62,9 +63,7 @@ const UploadImage: React.FC = () => {
       <Header />
       <h2 className="text-center text-2xl my-4">画像アップロード</h2>
       <input type="file" accept="image/*" onChange={handleImageUpload} />
-      {imagePreviewUrl && (
-        <img src={imagePreviewUrl} alt="Uploaded Image Preview" className="my-4" style={{ maxWidth: '100%', height: 'auto' }} />
-      )}
+        <Image src={imagePreviewUrl || ''} alt="Uploaded Image Preview" className="my-4" style={{ maxWidth: '100%', height: 'auto' }} layout="responsive" width={500} height={500} />
       <button onClick={handleSubmit} className="mt-4 bg-green-700 hover:bg-green-600 text-white p-2 rounded">
         画像をアップロードする
       </button>

@@ -6,18 +6,18 @@ interface SearchFormProps {
 }
 
 // カテゴリはvalueも日本語にしておく
-const categories = [
-  { label: '手提げかばん', value: '手提げかばん' },
-  { label: '財布', value: '財布' },
-  { label: '傘', value: '傘' },
-  { label: '時計', value: '時計' },
-  { label: 'メガネ', value: 'メガネ' },
-  { label: '携帯電話', value: '携帯電話' },
-  { label: 'カメラ', value: 'カメラ' },
-  { label: '鍵', value: '鍵' },
-  { label: '本', value: '本' },
-  { label: 'アクセサリー', value: 'アクセサリー' },
-];
+// const categories = [
+//   { label: '手提げかばん', value: '手提げかばん' },
+//   { label: '財布', value: '財布' },
+//   { label: '傘', value: '傘' },
+//   { label: '時計', value: '時計' },
+//   { label: 'メガネ', value: 'メガネ' },
+//   { label: '携帯電話', value: '携帯電話' },
+//   { label: 'カメラ', value: 'カメラ' },
+//   { label: '鍵', value: '鍵' },
+//   { label: '本', value: '本' },
+//   { label: 'アクセサリー', value: 'アクセサリー' },
+// ];
 
 export const SearchForm: React.FC<SearchFormProps> = ({ onSearch }) => {
   const [location, setLocation] = useState<string>('');

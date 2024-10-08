@@ -2,13 +2,7 @@
 
 import React, { useState } from 'react';
 import { SearchForm } from '@components/SearchForm';
-import { SearchTable } from '@components/SearchTable';
-
-interface SearchResult {
-  Municipality: string;
-  Subcategory: string;
-  Description: string;
-}
+import { SearchTable, SearchResult } from '@components/SearchTable';
 
 const Home: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
