@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardMedia, Typography } from '@mui/material';
-import { ItemData } from '../../types/types'; // パスを適宜調整してください
+import { ItemData } from '../../types'; // パスを適宜調整してください
 
 const ItemCard: React.FC<{ item: ItemData; onClick: (item: ItemData) => void }> = ({ item, onClick }) => {
   const [hovered, setHovered] = useState(false);

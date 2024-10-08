@@ -3,7 +3,7 @@ import React from 'react';
 import Image from 'next/image';
 import { Grid, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { ItemData } from '../../types/types'; // パスを適宜調整してください
+import { ItemData } from '../../types'; // パスを適宜調整してください
 
 interface DetailSidebarProps {
   item: ItemData | null;

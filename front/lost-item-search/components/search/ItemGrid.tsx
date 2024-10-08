@@ -2,7 +2,7 @@
 import React from 'react';
 import ItemCard from './ItemCard';
 import { Grid, CircularProgress, Typography } from '@mui/material';
-import { ItemData } from '../../types/types'; // パスを適宜調整してください
+import { ItemData } from '../../types'; // パスを適宜調整してください
 
 interface ItemGridProps {
   items: ItemData[];
