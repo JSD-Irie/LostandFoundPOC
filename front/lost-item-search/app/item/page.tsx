@@ -1,29 +1,26 @@
 'use client';
 
 // pages/search.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Header from '@components/search/Header';
 import SearchBar from '@components/search/SearchBar';
 import FilterSection from '@components/search/FilterSection';
 import ItemGrid from '@components/search/ItemGrid';
 import DetailSidebar from '@components/search/DetailSidebar';
 import { Container, Grid } from '@mui/material';
+import { ItemData } from '@/types/types'; // パスを適宜調整してください
 
 const SearchPage: React.FC = () => {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<ItemData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ItemData | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [subcategory, setSubcategory] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData(); // 初期ロード時にデータを取得
-  }, [subcategory, selectedColor, selectedDate]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     let apiUrl = `${apiBaseUrl}/lostitems`;
 
@@ -49,17 +46,26 @@ const SearchPage: React.FC = () => {
       if (!res.ok) {
         throw new Error('データ取得に失敗しました');
       }
-      const data = await res.json();
+      const data: ItemData[] = await res.json(); // 型を明示
       setItems(data);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError(error.message || 'データ取得中にエラーが発生しました');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error fetching data:', error);
+        setError(error.message || 'データ取得中にエラーが発生しました');
+      } else {
+        console.error('Unexpected error:', error);
+        setError('データ取得中に予期しないエラーが発生しました');
+      }
     } finally {
       setLoading(false); // ローディングを終了
     }
-  };
+  }, [subcategory, selectedColor, selectedDate]);
 
-  const handleItemClick = (item: any) => {
+  useEffect(() => {
+    fetchData(); // 初期ロード時にデータを取得
+  }, [fetchData]);
+
+  const handleItemClick = (item: ItemData) => {
     setSelectedItem(item);
     setSidebarOpen(true);
   };
@@ -88,8 +94,7 @@ const SearchPage: React.FC = () => {
       setSelectedDate(date);
     }
 
-    // フィルターが変更されたときにデータを再取得
-    fetchData();
+    // フィルターが変更されたときは、useEffectでデータを再取得
   };
 
   // エラーメッセージを表示
@@ -103,10 +108,10 @@ const SearchPage: React.FC = () => {
       <SearchBar onSearch={handleSearch} /> {/* onSearchを渡す */}
       <Grid container spacing={2}>
         <Grid item xs={12} md={3}>
-          <FilterSection 
-            onFilterChange={handleFilterChange} 
+          <FilterSection
+            onFilterChange={handleFilterChange}
             selectedColor={selectedColor} // 現在の選択されたカラーを渡す
-            selectedDate={selectedDate}   // 現在の選択された日付を渡す
+            selectedDate={selectedDate} // 現在の選択された日付を渡す
           />
         </Grid>
         <Grid item xs={12} md={9}>

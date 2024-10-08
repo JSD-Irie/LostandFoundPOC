@@ -1,6 +1,6 @@
 // components/search/FilterSection.tsx
 import React from 'react';
-import { Typography, FormControl, FormControlLabel, Checkbox, Grid } from '@mui/material';
+import { Typography, FormControlLabel, Checkbox, Grid } from '@mui/material';
 
 const FilterSection: React.FC = () => {
   return (

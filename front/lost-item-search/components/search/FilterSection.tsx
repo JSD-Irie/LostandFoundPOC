@@ -1,5 +1,4 @@
 // components/search/FilterSection.tsx
-import React, { useState } from 'react';
 import {
   Accordion,
   AccordionSummary,

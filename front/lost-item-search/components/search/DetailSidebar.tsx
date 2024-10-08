@@ -1,9 +1,17 @@
 // components/search/DetailSidebar.tsx
 import React from 'react';
+import Image from 'next/image';
 import { Grid, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { ItemData } from '@/types/types'; // パスを適宜調整してください
 
-const DetailSidebar: React.FC<{ item: any; isOpen: boolean; onClose: () => void }> = ({ item, isOpen, onClose }) => {
+interface DetailSidebarProps {
+  item: ItemData | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const DetailSidebar: React.FC<DetailSidebarProps> = ({ item, isOpen, onClose }) => {
   if (!isOpen || !item) return null; // サイドバーが開いていないか、アイテムがない場合は何も表示しない
 
   return (
@@ -14,7 +22,15 @@ const DetailSidebar: React.FC<{ item: any; isOpen: boolean; onClose: () => void 
           <CloseIcon />
         </IconButton>
       </div>
-      <img src={item.imageUrl[0]} alt="Item" className="w-full h-48 object-cover mb-4" />
+      <div className="w-full h-48 mb-4 relative">
+        <Image
+          src={item.imageUrl[0]}
+          alt="Item"
+          layout="fill"
+          objectFit="cover"
+          className="rounded"
+        />
+      </div>
       <div className="flex flex-col">
         <Grid container spacing={1} className="mb-2">
           <Grid item xs={3}>
