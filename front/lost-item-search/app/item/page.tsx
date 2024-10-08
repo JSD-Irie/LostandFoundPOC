@@ -8,7 +8,7 @@ import FilterSection from '@components/search/FilterSection';
 import ItemGrid from '@components/search/ItemGrid';
 import DetailSidebar from '@components/search/DetailSidebar';
 import { Container, Grid } from '@mui/material';
-import { ItemData } from '@/types/types'; // パスを適宜調整してください
+import { ItemData } from '../../types/types'; // パスを適宜調整してください
 
 const SearchPage: React.FC = () => {
   const [items, setItems] = useState<ItemData[]>([]);
