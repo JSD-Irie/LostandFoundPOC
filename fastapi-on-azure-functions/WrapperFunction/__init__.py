@@ -1,6 +1,7 @@
 # main.py
 from fastapi import FastAPI, UploadFile, File, HTTPException
 import uuid
+from datetime import datetime, timedelta
 from typing import List, Optional
 from datetime import datetime
 from fastapi.encoders import jsonable_encoder
@@ -38,11 +39,13 @@ BLOB_CONTAINER_NAME = "images"  # コンテナ名
 BLOB_ACCOUNT_URL = os.getenv("AZURE_BLOB_ACCOUNT_URL")  # ストレージアカウントのURL
 
 @app.get("/lostitems", response_model=List[LostItem])
-async def get_lost_items(municipality: Optional[str] = None, categoryName: Optional[str] = None):
+async def get_lost_items(municipality: Optional[str] = None, categoryName: Optional[str] = None, color: Optional[str] = None, findDate: Optional[str] = None):
     """
     Cosmos DB から忘れ物データをクエリし、結果を返す
     - `municipality`: 市区町村でフィルタリング
     - `categoryName`: 中分類でフィルタリング
+    - `color`: 色でフィルタリング
+    - `findDate`: 指定日数以内でフィルタリング
     """
     query = "SELECT * FROM c"
     filters = []
@@ -54,6 +57,24 @@ async def get_lost_items(municipality: Optional[str] = None, categoryName: Optio
     if categoryName:
         categoryName = chat_service.select_category(categoryName)
         filters.append(f"c.item.categoryName = '{categoryName}'")
+
+    if color:
+        filters.append(f"c.color.id = '{color}'")
+
+    # 日付フィルタ
+    if findDate:
+        today = datetime.utcnow()
+        if findDate == 'today':
+            filters.append(f"c.findDateTime >= '{today.strftime('%Y-%m-%dT%H:%M:%S')}'")
+        elif findDate == 'yesterday':
+            yesterday = today - timedelta(days=1)
+            filters.append(f"c.findDateTime >= '{yesterday.strftime('%Y-%m-%dT%H:%M:%S')}'")
+        elif findDate == 'last_week':
+            last_week = today - timedelta(weeks=1)
+            filters.append(f"c.findDateTime >= '{last_week.strftime('%Y-%m-%dT%H:%M:%S')}'")
+        elif findDate == 'last_month':
+            last_month = today - timedelta(weeks=4)  # 1ヶ月を4週間とする
+            filters.append(f"c.findDateTime >= '{last_month.strftime('%Y-%m-%dT%H:%M:%S')}'")
 
     if filters:
         query += " WHERE " + " AND ".join(filters)
@@ -110,15 +131,46 @@ async def add_lost_item(item: LostItemRequest):
         logger.error(f"Failed to add lost item: {e}")
         raise HTTPException(status_code=500, detail=f"アイテムの追加に失敗しました: {str(e)}")
 
+@app.delete("/lostitems/{id}", response_model=LostItem)
+async def delete_lost_item(id: str):
+    """
+    指定されたIDを持つ忘れ物データを削除する
+    :param id: 削除する忘れ物データのID
+    :return: 削除された忘れ物データ
+    """
+    query = f"SELECT * FROM c WHERE c.id = '{id}'"
+    logger.info(f"Executing query: {query}")
+
+    try:
+        items = list(lost_items_container.query_items(
+            query=query,
+            enable_cross_partition_query=True
+        ))
+        if not items:
+            raise HTTPException(status_code=404, detail="アイテムが見つかりません")
+
+        item_to_delete = items[0]
+        partition_key = item_to_delete['createUserPlace']  # 実際のパーティションキーのフィールド名に置き換えてください
+
+        # アイテムを削除
+        lost_items_container.delete_item(item=item_to_delete['id'], partition_key=partition_key)
+        logger.info(f"Deleted lost item with ID: {id}")
+
+        # Pydanticモデルに変換して返す
+        deleted_item = LostItem(**item_to_delete)
+        return deleted_item
+
+    except Exception as e:
+        logger.error(f"Failed to delete lost item: {e}")
+        raise HTTPException(status_code=500, detail=f"アイテムの削除に失敗しました: {str(e)}")
+
 @app.post("/imagescan")
 async def scan_image(image: UploadFile = File(...)):
     """
     画像をアップロードし、処理を行うエンドポイント
     :param image: アップロードされた画像ファイル
     :return: 処理結果
-    """
-    chat_service = ChatService()
-    
+    """    
     try:
         result = chat_service.process_image(image)
         return result

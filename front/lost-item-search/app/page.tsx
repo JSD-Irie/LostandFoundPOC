@@ -16,7 +16,7 @@ const RegisterLostItem: React.FC = () => {
   };
 
   const handleSearchClick = () => {
-    router.push('/search'); // 検索ページに遷移
+    router.push('/item'); // 検索ページに遷移
   };
 
   return (

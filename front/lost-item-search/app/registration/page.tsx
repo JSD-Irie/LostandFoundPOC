@@ -65,7 +65,7 @@ const DetailRegistration: React.FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [color, setColor] = useState<string>('');
-  const [categoryName, setCategoryName] = useState<keyof typeof categoryMapping | undefined>(undefined); // カテゴリー名のステート
+  const [categoryName, setCategoryName] = useState<string>('');
   const [memo, setMemo] = useState<string>('');
   const [deliveryLocation, setDeliveryLocation] = useState<string>('');
   const [retrievalLocation, setRetrievalLocation] = useState<string>('');
@@ -146,6 +146,7 @@ const DetailRegistration: React.FC = () => {
       if (!res.ok) {
         throw new Error('API request failed');
       }
+
 
       const responseData = await res.json();
       console.log('Scan successful:', responseData);
@@ -244,13 +245,16 @@ const DetailRegistration: React.FC = () => {
     <div>
       <Header />
       <h2 className="text-center text-2xl my-4">情報の入力</h2>
-      <Image
-        src={imagePreviewUrl || ''}
-        alt="Uploaded Image"
-        width={800} // Adjust the width as needed
-        height={600} // Adjust the height as needed
-        className="w-4/5 h-auto mb-4 border border-gray-300 rounded mx-auto" // 中央寄せ
-      />
+      {/* imagePreviewUrlがあれば表示 */}
+      {imagePreviewUrl && ( 
+        <Image
+          src={imagePreviewUrl}
+          alt="Uploaded Image"
+          width={800} // Adjust the width as needed
+          height={600} // Adjust the height as needed
+          className="w-4/5 h-auto mb-4 border border-gray-300 rounded mx-auto" // 中央寄せ
+        />
+      )}
       <div className="flex flex-col items-center">
         <label htmlFor="file-upload" className="cursor-pointer">
           <Button variant="contained" component="span" color="primary" startIcon={<CloudUploadIcon />}>
@@ -304,6 +308,32 @@ const DetailRegistration: React.FC = () => {
                 <MenuItem value="室蘭市">室蘭市</MenuItem>
                 <MenuItem value="北見市">北見市</MenuItem>
                 <MenuItem value="札幌駅">札幌駅</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+
+        <Grid container spacing={2} alignItems="center" margin="normal">
+          <Grid item xs={4}>
+            <Typography>色</Typography>
+          </Grid>
+          <Grid item xs={8}>
+            <FormControl fullWidth>
+              <Select
+                value={color}
+                onChange={(e) => setColor(e.target.value as keyof typeof colorMapping)}
+              >
+                <MenuItem value="black">黒（ブラック）系</MenuItem>
+                <MenuItem value="red">赤（レッド）系</MenuItem>
+                <MenuItem value="blue">青（ブルー）系</MenuItem>
+                <MenuItem value="green">緑（グリーン）系</MenuItem>
+                <MenuItem value="yellow">黄色（イエロー）系</MenuItem>
+                <MenuItem value="white">白（ホワイト）系</MenuItem>
+                <MenuItem value="gray">灰色（グレー）系</MenuItem>
+                <MenuItem value="brown">茶色（ブラウン）系</MenuItem>
+                <MenuItem value="purple">紫（パープル）系</MenuItem>
+                <MenuItem value="pink">ピンク系</MenuItem>
+                <MenuItem value="orange">オレンジ系</MenuItem>
               </Select>
             </FormControl>
           </Grid>
