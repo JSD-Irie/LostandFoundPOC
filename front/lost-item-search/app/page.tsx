@@ -12,34 +12,35 @@ const RegisterLostItem: React.FC = () => {
   const router = useRouter();
 
   const handleRegisterClick = () => {
-    router.push('/registration'); // 遺失物登録ページに遷移
+    router.push('/registration');
   };
 
   const handleSearchClick = () => {
-    router.push('/item'); // 検索ページに遷移
+    router.push('/item');
   };
 
   return (
     <div>
       <Header />
-      <div className="flex justify-center my-4">
+      <div className="flex justify-center flex-wrap my-4">
         <Card number={486} label="拾得物総数" />
         <Card number={198} label="警察届出数" />
         <Card number={97} label="返還済み" />
         <Card number={19} label="廃棄済み" />
       </div>
-      <div className="flex justify-center my-4">
+      <div className="flex justify-center flex-wrap my-4">
         <ActionButton
           icon={AssignmentIcon}
           title="遺失物の登録"
-          description="拾得した遺失物の情報を登録"
-          onClick={handleRegisterClick} // 遺失物登録ページに遷移
+          description="拾得した遺失物の情報を登録できます。"
+          onClick={handleRegisterClick}
         />
+        <div className="m-4"></div> {/* ボタン間のスペース */}
         <ActionButton
           icon={SearchIcon}
           title="遺失物の検索"
-          description="色や外見から遺失物を検索"
-          onClick={handleSearchClick} // 検索ページに遷移
+          description="色や外見から遺失物を検索できます。"
+          onClick={handleSearchClick}
         />
       </div>
     </div>

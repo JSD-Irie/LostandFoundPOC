@@ -6,31 +6,20 @@ interface ActionButtonProps {
   icon: ElementType;
   title: string;
   description: string;
-  onClick?: () => void; // 遷移時のハンドラ
-  onUpload?: (file: File) => void; // 画像アップロード時のハンドラ
+  onClick?: () => void;
 }
 
-const ActionButton: React.FC<ActionButtonProps> = ({ icon, title, description, onClick, onUpload }) => {
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files[0]) {
-      onUpload?.(files[0]); // 画像アップロードハンドラを呼び出し
-    }
-  };
-
+const ActionButton: React.FC<ActionButtonProps> = ({ icon, title, description, onClick }) => {
   return (
-    <div className="flex items-center bg-green-700 hover:bg-green-600 transition-colors p-3 rounded-md cursor-pointer" onClick={onClick}>
-      <SvgIcon component={icon} className="mr-2" />
-      <div className="flex flex-col">
-        <span className="text-md text-white">{title}</span>
-        <span className="text-sm text-white">{description}</span>
-      </div>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="hidden" // 非表示にする
-      />
+    <div
+      className="bg-green-500 hover:bg-green-400 border border-green-700 rounded-lg shadow-md p-4 m-2 w-1/3 max-w-sm cursor-pointer flex flex-col items-center"
+      onClick={onClick}
+      role="button"
+      aria-label={`${title}ボタン`}
+    >
+      <SvgIcon component={icon} style={{ fontSize: '48px', color: '#FFFFFF' }} />
+      <span className="text-lg font-bold text-white mt-2">{title}</span>
+      <span className="text-sm text-white">{description}</span>
     </div>
   );
 };
