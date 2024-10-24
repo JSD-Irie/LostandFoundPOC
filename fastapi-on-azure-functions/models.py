@@ -26,6 +26,10 @@ class Status(BaseModel):
     id: str
     name: str
 
+class KeywordRequest(BaseModel):
+    keyword: Optional[str] = None
+    itemType: Optional[str] = None
+
 class LostItemRequest(BaseModel):
     createUserPlace: Optional[str] = None          # 市区町村（オプショナル）
     findDateTime: Optional[datetime] = None        # 発見日時（オプショナル）
@@ -53,9 +57,15 @@ class LostItem(LostItemRequest):
     class Config:
         extra = Extra.allow
 
+class KeywordUpdateRequest(BaseModel):
+    keyword: List[str] = []  # キーワードリスト
+
 class LostItemBySubcategory(LostItemRequest):
     id: str
     item: Optional[Item] = None  # 明示的にオプショナルに定義
 
     class Config:
         extra = Extra.allow
+
+class isCheckedUpdateRequest(BaseModel):
+    isChecked: bool

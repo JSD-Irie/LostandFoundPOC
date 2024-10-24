@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
-
-export default nextConfig;
+const nextConfig = {
+    images: {
+      domains: ['storagelostitem.blob.core.windows.net'],
+    },
+  };
+  
+  export default nextConfig;

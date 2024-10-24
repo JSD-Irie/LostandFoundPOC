@@ -2,9 +2,15 @@
 # The Python Worker is managed by Azure Functions platform
 # Manually managing azure-functions-worker may cause unexpected issues
 
-azure-functions>=1.12.0
-fastapi
-uvicorn
-azure-cosmos
-python-dotenv
-openai
+azure-functions==1.12.0
+fastapi==0.115.0
+uvicorn==0.30.6
+azure-cosmos==4.7.0
+python-dotenv==1.0.1
+openai==1.46.0
+azure-identity==1.18.0
+azure-storage-blob==12.23.1
+azure-data-tables
+python-multipart
+aiohttp
+azure-cognitiveservices-vision-customvision

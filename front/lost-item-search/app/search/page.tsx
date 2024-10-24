@@ -2,13 +2,7 @@
 
 import React, { useState } from 'react';
 import { SearchForm } from '@components/SearchForm';
-import { SearchTable } from '@components/SearchTable';
-
-interface SearchResult {
-  Municipality: string;
-  Subcategory: string;
-  Description: string;
-}
+import { SearchTable, SearchResult } from '@components/SearchTable';
 
 const Home: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -19,11 +13,11 @@ const Home: React.FC = () => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     let apiUrl;
     if (location && subcategory) {
-      apiUrl = `${apiBaseUrl}/lostitems?municipality=${location}&subcategory=${subcategory}`;
+      apiUrl = `${apiBaseUrl}/lostitems?municipality=${location}&categoryName=${subcategory}`;
     } else if (location) {
       apiUrl = `${apiBaseUrl}/lostitems?municipality=${location}`;
     } else if (subcategory) {
-      apiUrl = `${apiBaseUrl}/lostitems/subcategory?subcategory=${subcategory}`;
+      apiUrl = `${apiBaseUrl}/lostitems?categoryName=${subcategory}`;
     } else {
       apiUrl = `${apiBaseUrl}/lostitems`;
     }

@@ -11,13 +11,13 @@ namespace MaterializedViews
         public static async Task Run(
             [CosmosDBTrigger(
                 databaseName: "MaterializedViewsDB",
-                containerName: "LostItems", // ソースとなる忘れ物データのコンテナ
+                containerName: "LostItems",
                 Connection = "CosmosDBConnection",
                 LeaseContainerName = "leases", 
                 CreateLeaseContainerIfNotExists = true)] IReadOnlyList<LostItem> input,
             [CosmosDB(
                 databaseName: "MaterializedViewsDB",
-                containerName: "LostItemsBySubcategory", // 忘れ物の中分類ビュー
+                containerName: "LostItemsBySubcategory",
                 Connection = "CosmosDBConnection",
                 CreateIfNotExists = true, 
                 PartitionKey = "/Subcategory")] IAsyncCollector<LostItemBySubcategory> lostItemsBySubcategory,

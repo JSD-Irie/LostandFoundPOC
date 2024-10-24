@@ -1,15 +1,17 @@
 import os
 from azure.cosmos import CosmosClient, PartitionKey
+from azure.identity import DefaultAzureCredential
 
 # 環境変数から Cosmos DB の接続情報を取得
 COSMOS_ENDPOINT = os.getenv("COSMOS_ENDPOINT")
-COSMOS_KEY = os.getenv("COSMOS_KEY")
 DATABASE_NAME = "MaterializedViewsDB"
 LOST_ITEMS_CONTAINER_NAME = "LostItems"
 LOST_ITEM_BY_SUBCATEGORY_CONTAINER_NAME = "LostItemsBySubcategory"
 
 # Cosmos DB クライアントの初期化
-client = CosmosClient(COSMOS_ENDPOINT, COSMOS_KEY)
+credential = DefaultAzureCredential()
+client = CosmosClient(COSMOS_ENDPOINT, credential)
+
 database = client.create_database_if_not_exists(id=DATABASE_NAME)
 
 # LostItems コンテナ
