@@ -16,9 +16,10 @@ const SearchPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<ItemData | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [subcategory, setSubcategory] = useState<string | null>(null);
+  const [subcategory] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [freeText, setFreeText] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -27,13 +28,16 @@ const SearchPage: React.FC = () => {
     // フィルター条件をURLに追加
     const filters = [];
     if (subcategory) {
-      filters.push(`categoryName=${subcategory}`);
+      filters.push(`itemName=${subcategory}`);
     }
     if (selectedColor) {
       filters.push(`color=${selectedColor}`);
     }
     if (selectedDate) {
       filters.push(`findDate=${selectedDate}`); // 日付フィルターの条件を追加
+    }
+    if (freeText) {
+      filters.push(`free_text=${freeText}`); // free_text フィルターの条件を追加
     }
 
     if (filters.length > 0) {
@@ -59,7 +63,7 @@ const SearchPage: React.FC = () => {
     } finally {
       setLoading(false); // ローディングを終了
     }
-  }, [subcategory, selectedColor, selectedDate]);
+  }, [subcategory, selectedColor, selectedDate, freeText]);
 
   useEffect(() => {
     fetchData(); // 初期ロード時にデータを取得
@@ -75,8 +79,8 @@ const SearchPage: React.FC = () => {
     setSelectedItem(null);
   };
 
-  const handleSearch = (subcategory: string) => {
-    setSubcategory(subcategory); // サブカテゴリを設定
+  const handleSearch = (text: string) => {
+    setFreeText(text); // free_text を設定
   };
 
   const handleFilterChange = (color: string | null, date: string | null) => {

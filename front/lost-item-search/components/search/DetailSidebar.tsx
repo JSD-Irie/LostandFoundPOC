@@ -80,6 +80,14 @@ const DetailSidebar: React.FC<DetailSidebarProps> = ({ item, isOpen, onClose }) 
             <span>{item.findPlace}</span>
           </Grid>
         </Grid>
+        <Grid container spacing={1} className="mb-2">
+          <Grid item xs={3}>
+            <span>キーワード:</span>
+          </Grid>
+          <Grid item xs={9}>
+            <span>{item.keyword.join(', ')}</span> {/* キーワードをカンマ区切りで表示 */}
+          </Grid>
+        </Grid>
       </div>
     </div>
   );

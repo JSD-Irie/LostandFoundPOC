@@ -12,5 +12,6 @@ export interface ItemData {
     findPlace: string;
     findDateTime: string;
     memo: string;
+    keyword: string[];
   }
   

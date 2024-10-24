@@ -15,6 +15,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import { v4 as uuidv4 } from 'uuid'; // UUID生成ライブラリをインポート
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useRouter } from 'next/navigation';
@@ -40,17 +41,22 @@ const colorMapping = {
 
 // カテゴリー情報のマッピング
 const categoryMapping = {
-  '手提げかばん': { categoryCode: '2601', categoryName: '手提げかばん', itemName: 'トートバッグ', valuableFlg: 1 },
-  '財布': { categoryCode: '2602', categoryName: '財布', itemName: '二つ折り財布', valuableFlg: 1 },
-  '傘': { categoryCode: '2603', categoryName: '傘', itemName: '折りたたみ傘', valuableFlg: 0 },
-  '時計': { categoryCode: '2604', categoryName: '時計', itemName: '腕時計', valuableFlg: 1 },
-  'メガネ': { categoryCode: '2605', categoryName: 'メガネ', itemName: 'サングラス', valuableFlg: 1 },
-  '携帯電話': { categoryCode: '2606', categoryName: '携帯電話', itemName: 'スマートフォン', valuableFlg: 1 },
-  'カメラ': { categoryCode: '2607', categoryName: 'カメラ', itemName: 'デジタルカメラ', valuableFlg: 1 },
-  '鍵': { categoryCode: '2608', categoryName: '鍵', itemName: 'カギ', valuableFlg: 0 },
-  '本': { categoryCode: '2609', categoryName: '本', itemName: '文庫本', valuableFlg: 0 },
-  'アクセサリー': { categoryCode: '2610', categoryName: 'アクセサリー', itemName: 'ネックレス', valuableFlg: 1 },
-  '携帯音響品': { categoryCode: '2611', categoryName: '携帯音響品', itemName: 'Bluetoothスピーカー', valuableFlg: 1 },
+  '手提げかばん': { categoryCode: '2601', categoryName: 'トートバッグ', itemName: '手提げかばん', valuableFlg: 1 },
+  '財布': { categoryCode: '2602', categoryName: '二つ折り財布', itemName: '財布', valuableFlg: 1 },
+  '傘': { categoryCode: '2603', categoryName: '折りたたみ傘', itemName: '傘', valuableFlg: 0 },
+  '時計': { categoryCode: '2604', categoryName: '腕時計', itemName: '時計', valuableFlg: 1 },
+  'メガネ': { categoryCode: '2605', categoryName: 'サングラス', itemName: 'メガネ', valuableFlg: 1 },
+  '携帯電話': { categoryCode: '2606', categoryName: 'スマートフォン', itemName: '携帯電話', valuableFlg: 1 },
+  'カメラ': { categoryCode: '2607', categoryName: 'デジタルカメラ', itemName: 'カメラ', valuableFlg: 1 },
+  '鍵': { categoryCode: '2608', categoryName: 'カギ', itemName: '鍵', valuableFlg: 0 },
+  '本': { categoryCode: '2609', categoryName: '文庫本', itemName: '本', valuableFlg: 0 },
+  'アクセサリー': { categoryCode: '2610', categoryName: 'ネックレス', itemName: 'アクセサリー', valuableFlg: 1 },
+  '携帯音響品': { categoryCode: '2611', categoryName: 'Bluetoothスピーカー', itemName: '携帯音響品', valuableFlg: 1 },
+};
+
+const generateUniqueFileName = (originalFileName: string) => {
+  const extension = originalFileName.split('.').pop(); // ファイルの拡張子を取得
+  return `${uuidv4()}.${extension}`; // UUIDと拡張子を組み合わせてユニークなファイル名を生成
 };
 
 // ユニークIDを生成する関数
@@ -72,8 +78,8 @@ const DetailRegistration: React.FC = () => {
   const [retrievalTime, setRetrievalTime] = useState<string>('');
   const [itemName, setItemName] = useState<string>('');
   const [keywords, setKeywords] = useState<string[]>([]); // キーワード用の配列
-  const [, setLoading] = useState<boolean>(false); // ローディング状態
-  const [, setError] = useState<string | null>(null); // エラーメッセージ
+  const [loading, setLoading] = useState<boolean>(false); // ローディング状態
+  const [error, setError] = useState<string | null>(null); // エラーメッセージ
   const [openDialog, setOpenDialog] = useState<boolean>(false); // ポップアップ状態
 
   // 画像のアップロード処理
@@ -102,20 +108,22 @@ const DetailRegistration: React.FC = () => {
   const uploadImageToBlobStorage = async (file: File): Promise<string> => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     const apiUrl = `${apiBaseUrl}/upload-image`; // 画像アップロード用のAPIエンドポイント
-
+  
+    const uniqueFileName = generateUniqueFileName(file.name); // ユニークなファイル名を生成
+  
     const formData = new FormData();
-    formData.append('image', file);
-
+    formData.append('image', file, uniqueFileName); // ユニークなファイル名でファイルを追加
+  
     try {
       const res = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
       });
-
+  
       if (!res.ok) {
         throw new Error('画像アップロードに失敗しました');
       }
-
+  
       const { imageUrl } = await res.json(); // APIから返される画像URLを取得
       return imageUrl; // 取得したURLを返す
     } catch (error) {
@@ -128,6 +136,7 @@ const DetailRegistration: React.FC = () => {
   const handleScanImage = async () => {
     if (!imageFile) {
       console.error('画像が選択されていません');
+      setError('画像が選択されていません');
       return;
     }
 
@@ -138,6 +147,9 @@ const DetailRegistration: React.FC = () => {
     formData.append('image', imageFile);
 
     try {
+      setLoading(true); // ローディング状態を開始
+      setError(null);   // エラーメッセージをリセット
+
       const res = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
@@ -147,16 +159,24 @@ const DetailRegistration: React.FC = () => {
         throw new Error('API request failed');
       }
 
-
       const responseData = await res.json();
       console.log('Scan successful:', responseData);
 
+      if (responseData.error) {
+        setError(responseData.error);
+        return;
+      }
+
       // 取得したデータでフォームを埋める
       setColor(responseData.color);
-      setCategoryName(responseData.categoryName); // APIから取得したcategoryNameを設定
-      setMemo(responseData.memo);
-    } catch (error) {
+      setItemName(responseData.itemName); // APIから取得したcategoryNameを設定
+      setKeywords(responseData.tags || []); // tags をキーワード配列に設定
+      // setMemo(responseData.memo || ''); // memoが存在する場合のみ設定
+    } catch (error: unknown) {
       console.error('Error scanning image:', error);
+      setError('画像のスキャン中にエラーが発生しました');
+    } finally {
+      setLoading(false); // ローディング状態を終了
     }
   };
 
@@ -250,8 +270,8 @@ const DetailRegistration: React.FC = () => {
         <Image
           src={imagePreviewUrl}
           alt="Uploaded Image"
-          width={800} // Adjust the width as needed
-          height={600} // Adjust the height as needed
+          width={800} // 調整可能
+          height={600} // 調整可能
           className="w-4/5 h-auto mb-4 border border-gray-300 rounded mx-auto" // 中央寄せ
         />
       )}
@@ -275,8 +295,9 @@ const DetailRegistration: React.FC = () => {
           color="secondary"
           startIcon={<PhotoCameraIcon />}
           onClick={handleScanImage}
+          disabled={loading} // ローディング中はボタンを無効化
         >
-          スキャン画像
+          {loading ? 'スキャン中...' : 'スキャン画像'}
         </Button>
       </div>
 
@@ -414,6 +435,12 @@ const DetailRegistration: React.FC = () => {
               onKeyDown={handleKeywordSubmit}
               fullWidth
               placeholder="キーワードを入力してEnter"
+              value={keywords.join(', ')} // キーワードをカンマ区切りで表示
+              onChange={(e) => {
+                const value = e.target.value;
+                const newKeywords = value.split(',').map(k => k.trim()).filter(k => k);
+                setKeywords(newKeywords);
+              }}
             />
             <div>
               <Typography variant="h6">登録されたキーワード:</Typography>
@@ -445,8 +472,8 @@ const DetailRegistration: React.FC = () => {
         <Button variant="outlined" color="info" onClick={() => router.back()} className="mr-4">
           戻る
         </Button>
-        <Button variant="contained" color="success" onClick={handleDataRegistration}>
-          データ登録
+        <Button variant="contained" color="success" onClick={handleDataRegistration} disabled={loading}>
+          {loading ? '登録中...' : 'データ登録'}
         </Button>
       </div>
 
@@ -459,12 +486,19 @@ const DetailRegistration: React.FC = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => handleDialogClose()}>続けて登録</Button>
+          <Button onClick={handleDialogClose}>続けて登録</Button>
           <Button onClick={handleGoHome} color="primary">
             トップページに戻る
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* エラーメッセージの表示 */}
+      {error && (
+        <Typography color="error" className="text-center mt-4">
+          {error}
+        </Typography>
+      )}
     </div>
   );
 };
