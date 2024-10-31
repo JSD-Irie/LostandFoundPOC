@@ -6,7 +6,6 @@ import Header from '@components/search/Header';
 import SearchBar from '@components/search/SearchBar';
 import FilterSection from '@components/search/FilterSection';
 import ItemGrid from '@components/search/ItemGrid';
-import DetailSidebar from '@components/search/DetailSidebar';
 import { Container, Grid } from '@mui/material';
 import { ItemData } from '../../types'; // パスを適宜調整してください
 import KeywordEditPopup from '@components/labelCheck/KeywordEditPopup'; // 新しく作成するコンポーネント
