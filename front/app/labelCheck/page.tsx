@@ -1,6 +1,6 @@
 'use client';
 
-// pages/search.tsx
+// pages/labelCheck.tsx
 import React, { useEffect, useState, useCallback } from 'react';
 import Header from '@components/search/Header';
 import SearchBar from '@components/search/SearchBar';
@@ -9,13 +9,14 @@ import ItemGrid from '@components/search/ItemGrid';
 import DetailSidebar from '@components/search/DetailSidebar';
 import { Container, Grid } from '@mui/material';
 import { ItemData } from '../../types'; // パスを適宜調整してください
+import KeywordEditPopup from '@components/labelCheck/KeywordEditPopup'; // 新しく作成するコンポーネント
 
-const SearchPage: React.FC = () => {
+const LabelCheckPage: React.FC = () => {
   const [items, setItems] = useState<ItemData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<ItemData | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
   const [subcategory] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -27,6 +28,7 @@ const SearchPage: React.FC = () => {
 
     // フィルター条件をURLに追加
     const filters = [];
+    filters.push(`isChecked=false`); // isChecked が false のものだけを取得
     if (subcategory) {
       filters.push(`itemName=${subcategory}`);
     }
@@ -71,11 +73,11 @@ const SearchPage: React.FC = () => {
 
   const handleItemClick = (item: ItemData) => {
     setSelectedItem(item);
-    setSidebarOpen(true);
+    setPopupOpen(true);
   };
 
-  const handleCloseSidebar = () => {
-    setSidebarOpen(false);
+  const handleClosePopup = () => {
+    setPopupOpen(false);
     setSelectedItem(null);
   };
 
@@ -122,12 +124,16 @@ const SearchPage: React.FC = () => {
           <ItemGrid items={items} loading={loading} onItemClick={handleItemClick} /> {/* loadingを渡す */}
         </Grid>
       </Grid>
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={handleCloseSidebar}></div>
+      {/* ポップアップの表示 */}
+      {selectedItem && (
+        <KeywordEditPopup
+          item={selectedItem}
+          isOpen={popupOpen}
+          onClose={handleClosePopup}
+        />
       )}
-      <DetailSidebar item={selectedItem} isOpen={sidebarOpen} onClose={handleCloseSidebar} />
     </Container>
   );
 };
 
-export default SearchPage;
+export default LabelCheckPage;

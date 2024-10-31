@@ -1,5 +1,5 @@
 {
-    "RoleName": "MyReadWriteRole3",
+    "RoleName": "MyReadWriteRole4",
     "Type": "CustomRole",
     "AssignableScopes": ["/"],
     "Permissions": [{

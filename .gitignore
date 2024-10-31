@@ -169,13 +169,12 @@ memo.txt
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 # Extension settings
-.vscode/
 
 # Environment-specific app settings
 appsettings.development.json
 appsettings.production.json
 appsettings.*.json
-local.settings.json
+local.settings.*
 
 # User-specific files
 *.rsuser
@@ -527,3 +526,8 @@ MigrationBackup/
 /schema-versioning/source/website/appsettings.Development.json
 
 __azurite_*
+
+backup*
+
+deploy-memo.txt
+サンプルデータ.json

@@ -57,6 +57,8 @@ async def add_lost_item(data: dict) -> dict:
             **data
         }
 
+        logger.info(f"Adding lost item with RowKey: {entity}")
+
         # テーブルクライアントの取得を非同期に実行
         table_client = await get_table_client()
 
@@ -97,6 +99,9 @@ async def list_lost_items(filters: Optional[dict] = None) -> list:
                     elif value == 'last_month':
                         date = datetime.utcnow().date() - timedelta(weeks=4)
                         filter_clauses.append(f"LostDateTime ge '{date.isoformat()}'")
+                elif key == "keyword":
+                    # キーワードフィルタ
+                    filter_clauses.append(f"keyword eq '{value}'")
                 else:
                     filter_clauses.append(f"{key} eq '{value}'")
             query_filter = " and ".join(filter_clauses)
@@ -112,4 +117,43 @@ async def list_lost_items(filters: Optional[dict] = None) -> list:
 
     except Exception as e:
         logger.error(f"Failed to list lost items: {e}")
+        raise
+
+async def delete_all_labels():
+    """
+    Azure Table Storage内の全ての遺失物データを削除する関数
+    """
+    try:
+        table_client = await get_table_client()
+        entities = table_client.list_entities()
+        for entity in entities:
+            table_client.delete_entity(partition_key=entity["PartitionKey"], row_key=entity["RowKey"])
+        logger.info("All lost items have been deleted.")
+    except Exception as e:
+        logger.error(f"Failed to delete all lost items: {e}")
+        raise
+
+async def delete_lost_items_by_keyword(keyword: str):
+    """
+    指定されたキーワードを持つ遺失物データを削除する関数
+    :param keyword: 削除対象のキーワード
+    """
+    try:
+        table_client = await get_table_client()
+
+        # キーワードに一致するエンティティをクエリ
+        filter_query = f"keyword eq '{keyword}'"
+        entities = table_client.query_entities(filter_query)
+
+        deleted_count = 0
+        for entity in entities:
+            partition_key = entity['PartitionKey']
+            row_key = entity['RowKey']
+            table_client.delete_entity(partition_key=partition_key, row_key=row_key)
+            logger.info(f"Deleted entity with PartitionKey: {partition_key}, RowKey: {row_key}")
+            deleted_count += 1
+
+        logger.info(f"Deleted {deleted_count} items with keyword '{keyword}'")
+    except Exception as e:
+        logger.error(f"Failed to delete items with keyword '{keyword}': {e}")
         raise

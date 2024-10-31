@@ -12,12 +12,15 @@
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@mui/icons-material": "^6.1.2",
+    "axios": "^1.7.7",
     "next": "14.2.8",
     "react": "^18",
     "react-confirm-alert": "^3.0.6",
     "react-dom": "^18"
   },
   "devDependencies": {
+    "@azure/static-web-apps-cli": "^2.0.1",
+    "@types/axios": "^0.14.4",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
