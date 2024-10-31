@@ -7,6 +7,7 @@ import Card from '@components/TopPage/Card';
 import ActionButton from '@components/TopPage/ActionButton';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SearchIcon from '@mui/icons-material/Search';
+import LabelImportantIcon from '@mui/icons-material/LabelImportant'; // 新しく追加
 
 const RegisterLostItem: React.FC = () => {
   const router = useRouter();
@@ -17,6 +18,10 @@ const RegisterLostItem: React.FC = () => {
 
   const handleSearchClick = () => {
     router.push('/item');
+  };
+
+  const handleLabelCheckClick = () => {
+    router.push('/labelCheck');
   };
 
   return (
@@ -41,6 +46,13 @@ const RegisterLostItem: React.FC = () => {
           title="遺失物の検索"
           description="色や外見から遺失物を検索できます。"
           onClick={handleSearchClick}
+        />
+        <div className="m-4"></div> {/* ボタン間のスペース */}
+        <ActionButton
+          icon={LabelImportantIcon}
+          title="ラベルチェック"
+          description="遺失物のラベルを確認・編集できます。"
+          onClick={handleLabelCheckClick}
         />
       </div>
     </div>

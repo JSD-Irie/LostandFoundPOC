@@ -15,7 +15,8 @@ from models import (
     Color,
     Status,
     Item,
-    KeywordUpdateRequest
+    KeywordUpdateRequest,
+    isCheckedUpdateRequest
 )
 from database import get_lost_item_container, get_lost_item_by_subcategory_container
 from chat_service import ChatService
@@ -23,13 +24,14 @@ import logging
 from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential
 import os
-from table_storage import add_lost_item as add_lost_item_to_table_storage, list_lost_items  # 修正
+from table_storage import add_lost_item as add_lost_item_to_table_storage, list_lost_items, delete_lost_items_by_keyword, delete_all_labels
 import asyncio
 import concurrent.futures
 from azure.cognitiveservices.vision.customvision.training import CustomVisionTrainingClient
 from azure.cognitiveservices.vision.customvision.training.models import ImageFileCreateEntry, ImageFileCreateBatch
 from msrest.authentication import CognitiveServicesCredentials
 from msrest.authentication import ApiKeyCredentials
+import httpx
 
 # ロギングの設定
 logging.basicConfig(level=logging.INFO)
@@ -68,7 +70,8 @@ async def get_lost_items(
     municipality: Optional[str] = None,
     itemName: Optional[str] = None,
     color: Optional[str] = None,
-    findDate: Optional[str] = None
+    findDate: Optional[str] = None,
+    isChecked: Optional[bool] = None  # 新しい引数を追加
 ):
     """
     Cosmos DB から忘れ物データをクエリし、結果を返す
@@ -77,6 +80,7 @@ async def get_lost_items(
     - `itemName`: 中分類でフィルタリング
     - `color`: 色でフィルタリング
     - `findDate`: 指定日数以内でフィルタリング
+    - `isChecked`: チェック済みかどうかでフィルタリング
     """
     query = "SELECT * FROM c"
     filters = []
@@ -120,6 +124,11 @@ async def get_lost_items(
             filters.append("c.findDateTime >= @findDate")
             parameters.append({"name": "@findDate", "value": date_value})
 
+    # isChecked フィルタ
+    if isChecked is not None:
+        filters.append("c.isChecked = @isChecked")
+        parameters.append({"name": "@isChecked", "value": str(isChecked)})
+
     if filters:
         query += " WHERE " + " AND ".join(filters)
 
@@ -148,7 +157,7 @@ async def get_lost_items(
     
     
 @app.post("/lostitems", response_model=LostItem)
-async def add_lost_item(item: LostItemRequest):
+async def create_lost_item(item: LostItemRequest):
     """
     新しい忘れ物データを Cosmos DB に追加する
     """
@@ -217,6 +226,7 @@ async def update_keywords(id: str, update_request: KeywordUpdateRequest):
         logger.error(f"Failed to update keywords for item with ID {id}: {e}")
         raise HTTPException(status_code=500, detail=f"キーワードの更新に失敗しました: {str(e)}")
     
+
 
 @app.delete("/lostitems/{id}", response_model=LostItem)
 async def delete_lost_item(id: str):
@@ -313,7 +323,7 @@ async def upload_image(image: UploadFile = File(...)):
 executor = concurrent.futures.ThreadPoolExecutor()
 
 
-@app.post("/azure-lostitems", response_model=dict)
+@app.post("/labels", response_model=dict)
 async def add_azure_lost_item(item: KeywordRequest):
     """
     新しい遺失物データを Azure Table Storage に追加するエンドポイント
@@ -335,8 +345,8 @@ async def add_azure_lost_item(item: KeywordRequest):
         logger.error(f"Failed to add lost item to Azure Table Storage: {e}")
         raise HTTPException(status_code=500, detail=f"アイテムの追加に失敗しました: {str(e)}")
 
-# 新しいエンドポイント：Azure Table Storageから遺失物を一覧取得
-@app.get("/azure-lostitems", response_model=List[str])
+# 新しいエンドポイント：Azure Table Storageからラベルを一覧取得
+@app.get("/labels", response_model=List[str])
 async def get_azure_lost_items(
     item_type: Optional[str] = None,
     color: Optional[str] = None,
@@ -368,6 +378,38 @@ async def get_azure_lost_items(
     except Exception as e:
         logger.error(f"Failed to retrieve lost items: {e}")
         raise HTTPException(status_code=500, detail=f"データの取得に失敗しました: {str(e)}")
+    
+# 新しいエンドポイント：azure Table Storageに登録されているラベルを一括削除
+@app.delete("/labels")
+async def delete_azure_lost_items():
+    """
+    Azure Table Storage に登録されているすべての遺失物データを削除するエンドポイント
+    """
+    try:
+        await delete_all_labels()
+
+        return {"message": "Deleted all labels"}
+
+    except Exception as e:
+        logger.error(f"Failed to delete all labels: {e}")
+        raise HTTPException(status_code=500, detail=f"ラベルの削除に失敗しました: {str(e)}")
+    
+# 新しいエンドポイント：Azure Table Storageからkeywordフィールドで特定のラベルを指定して削除
+@app.delete("/labels/{keyword}")
+async def delete_azure_lost_items_by_keyword(keyword: str):
+    """
+    Azure Table Storage に登録されている指定されたラベルを持つ遺失物データを削除するエンドポイント
+    :param keyword: 削除するラベル
+    """
+    try:
+        # Azure Table Storageからデータを取得（非同期で実行）
+        await delete_lost_items_by_keyword(keyword)
+
+        return {"message": f"Deleted all labels with keyword '{keyword}'"}
+
+    except Exception as e:
+        logger.error(f"Failed to delete labels with keyword '{keyword}': {e}")
+        raise HTTPException(status_code=500, detail=f"ラベルの削除に失敗しました: {str(e)}")
 
 @app.post("/select-keyword")
 async def select_keyword(free_text: str):
@@ -388,6 +430,12 @@ async def label_image(
     label_names: List[str] = Form(...),
     image: UploadFile = File(...)
 ):
+    """
+    画像を Custom Vision でラベル付けするエンドポイント
+    :param label_names: 画像に付けるラベルのリスト
+    :param image: アップロードされた画像ファイル
+    :return: 処理結果
+    """
     try:
         # プロジェクトの取得
         project = trainer.get_project(CUSTOM_VISION_PROJECT_ID)
@@ -440,6 +488,113 @@ async def label_image(
         
         return {"message": "画像が正常にラベル付けされました。"}
     
+    except HTTPException as he:
+        logger.error(f"HTTPエラーが発生しました: {he.detail}")
+        raise he
+    except Exception as e:
+        logger.error(f"予期しないエラーが発生しました: {e}")
+        raise HTTPException(status_code=500, detail="サーバー内部でエラーが発生しました。")
+
+# 新しいエンドポイントの修正（関数名を変更）
+@app.post("/lostitems/{id}/process-image", response_model=LostItem)
+async def process_lost_item_image(
+    id: str,
+    request: KeywordUpdateRequest
+):
+    """
+    指定されたIDの遺失物データに対して画像をラベル付けし、キーワードを更新し、isCheckedをtrueに設定するエンドポイント。
+
+    - **id**: 遺失物データのID
+    - **keyword**: 更新するキーワードのリスト（オプション）
+    """
+    try:
+        # 1. 遺失物データの取得
+        query = f"SELECT * FROM c WHERE c.id = '{id}'"
+        items = list(lost_items_container.query_items(
+            query=query,
+            enable_cross_partition_query=True
+        ))
+
+        if not items:
+            raise HTTPException(status_code=404, detail="アイテムが見つかりません")
+
+        item_to_update = items[0]
+        partition_key = item_to_update.get('createUserPlace', '')  # パーティションキーの取得
+
+        # 2. キーワードの決定
+        if request.keyword:
+            labels_to_use = request.keyword
+            item_to_update['keyword'] = request.keyword  # キーワードを更新
+        else:
+            existing_keywords = item_to_update.get('keyword', [])
+            if not existing_keywords:
+                raise HTTPException(status_code=400, detail="キーワードが提供されておらず、既存のキーワードもありません。")
+            labels_to_use = existing_keywords  # 既存のキーワードを使用
+
+        # 3. isCheckedをtrueに設定
+        item_to_update['isChecked'] = True
+
+        # 4. Custom Visionで画像にラベル付け
+        image_urls = item_to_update.get('imageUrl', [])
+        if not image_urls:
+            raise HTTPException(status_code=400, detail="画像URLが存在しません。")
+        image_url = image_urls[0]  # 最初の画像URLを使用
+
+        # 画像のダウンロード
+        async with httpx.AsyncClient() as client:
+            response = await client.get(image_url)
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail=f"画像のダウンロードに失敗しました。ステータスコード: {response.status_code}")
+            image_data = response.content
+
+        # ラベルの存在確認と取得
+        existing_tags = trainer.get_tags(CUSTOM_VISION_PROJECT_ID)
+        tags_to_add = []
+        for label_name in labels_to_use:
+            tag = next((t for t in existing_tags if t.name.lower() == label_name.lower()), None)
+            if not tag:
+                # ラベルが存在しない場合、新規作成
+                tag = trainer.create_tag(CUSTOM_VISION_PROJECT_ID, label_name)
+                if not tag:
+                    raise HTTPException(status_code=500, detail=f"ラベル '{label_name}' の作成に失敗しました。")
+            tags_to_add.append(tag.id)
+
+        if not tags_to_add:
+            raise HTTPException(status_code=400, detail="有効なラベルが指定されていません。")
+
+        # 画像エントリの作成
+        image_entry = ImageFileCreateEntry(
+            name=os.path.basename(image_url),
+            contents=image_data,
+            tag_ids=tags_to_add  # タグIDを関連付け
+        )
+
+        # バッチの作成
+        batch = ImageFileCreateBatch(images=[image_entry])
+
+        # 画像のアップロードとラベル付け
+        results = trainer.create_images_from_files(CUSTOM_VISION_PROJECT_ID, batch)
+
+        logger.info(f"画像のラベル付け結果: {results}")
+
+        # if not results.is_batch_successful:
+        #     errors = []
+        #     for image_result in results.images:
+        #         if image_result.status != "OK" and image_result.status != "OKDuplicate":
+        #             errors.append({
+        #                 "image": image_result.image.id if image_result.image else "不明な画像",
+        #                 "status": image_result.status
+        #             })
+        #     return JSONResponse(status_code=400, content={"errors": errors})
+
+        # 5. Cosmos DBに更新を反映
+        lost_items_container.replace_item(item=item_to_update['id'], body=item_to_update)
+        logger.info(f"Updated lost item with ID: {id}")
+
+        # 6. Pydanticモデルに変換して返す
+        updated_item = LostItem(**item_to_update)
+        return updated_item
+
     except HTTPException as he:
         logger.error(f"HTTPエラーが発生しました: {he.detail}")
         raise he
