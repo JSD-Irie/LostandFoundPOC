@@ -303,17 +303,9 @@ git push origin main
 
 5. この変更を加えた後`main`ブランチにプッシュすると、Azure Static Web Apps に自動デプロイが開始されます。
 
-6. 下記のコマンドで Azure Static Web Apps のマネージド ID を有効化します。
+6. 下記のコマンドで、Azure Static Web Apps の URL を確認し、フロントエンドが正常に動作していることを確認します。
     ```bash
-    az staticwebapp identity assign --name <アプリケーション名> --resource-group <リソースグループ名>
-    ```
-7. 下記のコマンドで、Azure Static Web Apps のマネージド ID を取得します。
-    ```bash
-    $roleId = az staticwebapp identity show --name <アプリケーション名> --resource-group <リソースグループ名> --query principalId -o tsv
-    ```
-8. 下記のコマンドで、Azure Static Web Apps に 画像保存用の Azure Blob Storage の閲覧権限を付与します。
-    ```bash
-    az role assignment create --assignee $roleId --role "Storage Blob Data Reader" --scope /subscriptions/<サブスクリプションID>/resourceGroups/<リソースグループ名>
+    az staticwebapp show --name <Azure Static Web Apps 名> --resource-group <リソースグループ名> --query "defaultHostname"
     ```
 
 ### 動作確認
@@ -331,21 +323,25 @@ git push origin main
 
 2. 【登録シナリオ】次に、フロントエンドの URL にアクセスし、`遺失物の登録`をクリックして、遺失物の情報を登録します。
     - 2.1. トップページで、`遺失物の登録`をクリックします。
-    ![image](https://github.com/user-attachments/assets/f9f39c90-7032-47da-ba14-fd8f601d3b16)
+    ![image](https://github.com/user-attachments/assets/ab61905e-48c2-4955-a385-d1bae933a02c)
     - 2.2. 画像をアップロードをクリックして、任意の画像をアップロードします。
     - 2.3. スキャン画像をクリックして、画像をスキャンします。スキャンした画像に対して、登録したラベルがレコメンドされます。登録したラベルが正しいか確認し、必要に応じて修正してください。
     - 2.4. 他の情報を入力し、`登録`をクリックして、遺失物の情報を登録します(取得時間は必須項目のため、記入しないと登録ができません)。
     ![image](https://github.com/user-attachments/assets/0cae1e68-349f-42a2-bfe3-69507ed14f3a)
 
 3. 【学習シナリオ】トップページに戻り、`ラベルチェック`をクリックして、ラベルの学習を行います。
-    - 3.1. ラベルチェックがされていない遺失物の一覧が表示されます。この中から、ラベルチェックを行いたい遺失物を選択します。
+    - 3.1. トップページで、`ラベルチェック`をクリックします。
+    ![image](https://github.com/user-attachments/assets/336e1236-d925-4313-ac84-d900d60b5f4c)
+    - 3.2. ラベルチェックがされていない遺失物の一覧が表示されます。この中から、ラベルチェックを行いたい遺失物を選択します。
     ![image](https://github.com/user-attachments/assets/cfa695fe-5264-45ee-9e2f-e9fb5c9f07ce)
-    - 3.2. キーワードを編集したい場合はカンマ区切りでキーワードを入力し、`キーワードの更新`をクリックします。このままのラベルのままキーワードを登録したい場合は、`このままでOK`をクリックします。
+    - 3.3. キーワードを編集したい場合はカンマ区切りでキーワードを入力し、`キーワードの更新`をクリックします。このままのラベルのままキーワードを登録したい場合は、`このままでOK`をクリックします。
     ![image](https://github.com/user-attachments/assets/b0c2c377-3ae7-4baf-aaf9-f6eb7e53a6d5)
-    - 3.3. [Custom Vision ポータル](https://www.customvision.ai/projects) にアクセスし、プロジェクトに移動します。プロジェクトに登録された画像が表示され、画像に対してラベルが付与されていることを確認します。15枚以上の画像が登録されている場合、学習を開始することができます。
+    - 3.4. [Custom Vision ポータル](https://www.customvision.ai/projects) にアクセスし、プロジェクトに移動します。プロジェクトに登録された画像が表示され、画像に対してラベルが付与されていることを確認します。15枚以上の画像が登録されている場合、学習を開始することができます。
     ![image](https://github.com/user-attachments/assets/6a953f97-9a76-43e8-973e-2130d25d7776)
 4. 【検索シナリオ】トップページに戻り、`遺失物の検索`をクリックして、遺失物の検索を行います。
-    - 4.1. 学習シナリオにてキーワードの確認を行った遺失物の一覧が表示されていることを確認します。
+    - 4.1. トップページで、`遺失物の検索`をクリックします。
+    ![image](https://github.com/user-attachments/assets/64ca5256-75c9-48dd-bc14-2f8702d05c4f)
+    - 4.2. 学習シナリオにてキーワードの確認を行った遺失物の一覧が表示されていることを確認します。
     ![image](https://github.com/user-attachments/assets/bbd9bf61-6131-4308-8858-aee98e8c2f80)
-    - 4.2. 登録したキーワードに対して検索を行いたい場合、検索窓からキーワードを入力し、`検索`をクリックします。登録したキーワードに近い用語が検索され、遺失物の一覧が表示されます。
+    - 4.3. 登録したキーワードに対して検索を行いたい場合、検索窓からキーワードを入力し、`検索`をクリックします。登録したキーワードに近い用語が検索され、遺失物の一覧が表示されます。
     ![image](https://github.com/user-attachments/assets/49e71ae1-3609-44d5-ad59-fc0e6a81fe69)
