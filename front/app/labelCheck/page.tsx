@@ -107,6 +107,7 @@ const LabelCheckPage: React.FC = () => {
     return <div>Error: {error}</div>;
   }
 
+
   return (
     <Container>
       <Header />

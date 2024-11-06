@@ -127,7 +127,7 @@ async def get_lost_items(
     # isChecked フィルタ
     if isChecked is not None:
         filters.append("c.isChecked = @isChecked")
-        parameters.append({"name": "@isChecked", "value": str(isChecked)})
+        parameters.append({"name": "@isChecked", "value": isChecked})
 
     if filters:
         query += " WHERE " + " AND ".join(filters)

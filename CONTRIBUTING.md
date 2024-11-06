@@ -252,7 +252,35 @@
 ![image](https://github.com/user-attachments/assets/026b9cef-53fb-4826-8ae6-20d3eadd1a5f)
 
 ### フロントエンドのデプロイ (Option)
-1. 下記のコマンドでStatic Web Appsのリソースを作成します。
-    ```bash
-    az staticwebapp create --name <Static Web Appsの名前> --resource-group <リソースグループ名> --location <リージョン> --sku Free --app-location front --app-artifact-location front/.next
-    ```
+1. GitHub 経由でデプロイを行うため、事前に GitHub にリポジトリを作成してください。作成したリポジトリにこのプロジェクトをプッシュしてください。
+```bash
+git remote add origin <作成したGitHubリポジトリURL>
+git add .
+git commit -m "<任意のコミットメッセージ>"
+git push origin main
+```
+
+2. Azure Portal にログインし、Azure Static Web Apps を検索して、新しいアプリケーションを作成します。下記のテーブルを参考にパラメータを設定してください。
+    | 項目 | 設定値 |
+    | --- | --- |
+    | サブスクリプション | ご利用のサブスクリプション |
+    | リソースグループ | 作成したリソースグループ名 |
+    | 名前 | 任意のアプリケーション名 |
+    | プラン | 任意のプラン |
+    | リージョン | 任意のリージョン |
+    | ソース | GitHub |
+    | GitHub アカウント | ご利用の GitHub アカウント |
+    | 組織 | ご利用の GitHub 組織 |
+    | リポジトリ | 作成したリポジトリ |
+    | ブランチ | main |
+    | ビルドのプリセット | Next.js |
+    | アプリの場所 | ./front |
+    | API の場所 | 空にしておいてください |
+    | 出力先 | 空にしておいてください |
+    | Deployment authentication policy | GitHub |
+    | Azure Functions API とステージング環境のリージョン | 任意のリージョン |
+
+
+    ![image](https://github.com/user-attachments/assets/cda4819b-d2d4-40d2-90e4-852ad841f2d7)
+
+3. 
