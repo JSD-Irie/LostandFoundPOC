@@ -96,7 +96,7 @@ const KeywordEditPopup: React.FC<KeywordEditPopupProps> = ({ item, isOpen, onClo
           <Button
             variant="contained"
             color="primary"
-            onClick={() => handleSubmit(false)} // キーワードを更新せずに送信
+            onClick={() => handleSubmit(true)} // キーワードを更新せずに送信
             disabled={loading}
           >
             {loading ? <CircularProgress size={24} /> : 'このままでOK'}

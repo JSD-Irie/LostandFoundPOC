@@ -17,7 +17,7 @@ database = client.create_database_if_not_exists(id=DATABASE_NAME)
 # LostItems コンテナ
 lost_items_container = database.create_container_if_not_exists(
     id=LOST_ITEMS_CONTAINER_NAME,
-    partition_key=PartitionKey(path="/Municipality"),
+    partition_key=PartitionKey(path="/createUserPlace"),
     offer_throughput=400
 )
 
